@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "894214969927",
+    "project_id": "flutter-fire-dry-run",
+    "storage_bucket": "flutter-fire-dry-run.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:894214969927:android:971746365b47bb37aaef62",
+        "android_client_info": {
+          "package_name": "com.example.flutter_fire"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "894214969927-or64p880iudv5uf1ksbq53pqi5jr7q61.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClA8tuzfY-W2c4SK7NQDcTzI5n77ZDBkw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "894214969927-or64p880iudv5uf1ksbq53pqi5jr7q61.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "894214969927-dc8slf3j0l0ff05741uiiid001ckq6nt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterFire"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
