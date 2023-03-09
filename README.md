@@ -10,7 +10,6 @@
 
 ## Project Setup
 
-- Create cloud project
 - Create flutter project
 - Flutter: New Project
 ```bash
@@ -71,3 +70,37 @@ flutter create --platforms=ios,android,web flutter_fire
     - author: string
     - content: string
     - sentAt: timestamp
+
+## Run
+
+To run the web version:
+```bash
+flutter run -d chrome
+```
+
+To run the android version:
+```bash
+emulator -list-avds
+emulator @<avd_name>
+flutter devices
+flutter run -d <device-name>
+```
+
+To run the iOS version:
+```bash
+open -a Simulator
+flutter devices
+flutter run -d <device-name>
+```
+
+## Build
+
+To build for web:
+```bash
+flutter build web
+```
+
+To build the APK (found under `build/aap/outputs/apk/release/*`)
+```bash
+flutter build apk
+```

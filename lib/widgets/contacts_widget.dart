@@ -22,7 +22,7 @@ class ContactsWidget extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       appBar: const AppBarWidget(),
-      body: user != null ? buildContactList(user) : const Center(child: Text('Please sign in')),
+      body: user != null ? buildContactList(user) : const Center(child: Text('Please sign in!')),
     );
   }
 
