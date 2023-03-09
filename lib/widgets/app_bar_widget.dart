@@ -10,15 +10,17 @@ class AppBarWidget extends StatelessWidget with PreferredSizeWidget {
       title: const Text("Flutter Fire"),
       actions: [
         StreamBuilder(
-            stream: FirebaseAuth.instance.authStateChanges(),
-            builder: (context, snapshot) {
-              return snapshot.hasData ? buildMenu(context) : const SizedBox();
-            })
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const SizedBox();
+            return buildMenu(context, snapshot.data!);
+          },
+        )
       ],
     );
   }
 
-  Widget buildMenu(BuildContext context) {
+  Widget buildMenu(BuildContext context, User user) {
     return PopupMenuButton(
       iconSize: 50,
       itemBuilder: (context) {
@@ -33,9 +35,7 @@ class AppBarWidget extends StatelessWidget with PreferredSizeWidget {
           )
         ];
       },
-      icon: CircleAvatar(
-        backgroundImage: NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!),
-      ),
+      icon: CircleAvatar(backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null),
     );
   }
 

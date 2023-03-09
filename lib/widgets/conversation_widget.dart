@@ -1,23 +1,30 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_fire/models/contact.model.dart';
 
+import '../models/conversation.model.dart';
+import '../models/message.model.dart';
 import 'app_bar_widget.dart';
 
-class Message {
-  Message({required this.id, required this.authorId, required this.content});
-  final String id;
-  final String authorId;
-  final String content;
-}
-
-final data = [
-  Message(id: '1', authorId: '1', content: 'Hello World!'),
-  Message(id: '2', authorId: '2', content: 'My name is not World'),
-  Message(id: '3', authorId: '1', content: 'Generally it is'),
-  Message(id: '4', authorId: '2', content: 'I am not General Lee either...\nDo not let it happen again'),
-];
-
-const primaryColor = Color(0xff203152);
+const blueColor = Color(0xff203152);
 const greyColor = Color(0xffaeaeae);
+const chatBackground = Color(0xffE8E8E8);
+
+class ConversationContext {
+  ConversationContext(
+      {required this.senderId,
+      this.senderPhotoURL,
+      required this.recipientId,
+      this.recipientPhotoURL,
+      required this.conversationId});
+
+  final String senderId;
+  final String? senderPhotoURL;
+  final String recipientId;
+  final String? recipientPhotoURL;
+  final String conversationId;
+}
 
 class ConversationWidget extends StatefulWidget {
   const ConversationWidget({Key? key, required this.recipientId}) : super(key: key);
@@ -29,36 +36,118 @@ class ConversationWidget extends StatefulWidget {
 }
 
 class ConversationWidgetState extends State<ConversationWidget> {
+  final db = FirebaseFirestore.instance;
   final messageController = TextEditingController();
+  final messageFocus = FocusNode();
 
   @override
   void dispose() {
     messageController.dispose();
+    messageFocus.dispose();
     super.dispose();
+  }
+
+  Future<ConversationContext?> getConversationContext() async {
+    // get the sender
+    final sender = FirebaseAuth.instance.currentUser;
+    if (sender == null) {
+      print('Sender does not exist');
+      return null;
+    }
+
+    // get the recipient
+    final recipientDoc = await db.collection('users').doc(widget.recipientId).get();
+    if (!recipientDoc.exists) {
+      print('Recipient does not exist ${widget.recipientId}');
+      return null;
+    }
+    final recipient = Contact.fromFirestore(recipientDoc.data()!);
+
+    // verify the conversation exists
+    final participantIds = [sender.uid, recipient.id];
+    participantIds.sort();
+    final conversationId = participantIds.join('_');
+    final conversationRef = db.collection('conversations').doc(conversationId);
+    final conversation = await conversationRef.get();
+
+    // create it if it doesn't
+    if (!conversation.exists) {
+      final conversation = Conversation(participants: [sender.uid, recipient.id], messages: []);
+      await conversationRef.set(conversation.toFirestore());
+    }
+
+    return ConversationContext(
+      senderId: sender.uid,
+      senderPhotoURL: sender.photoURL,
+      recipientId: recipient.id,
+      recipientPhotoURL: recipient.photoURL,
+      conversationId: conversationId,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const AppBarWidget(),
-      body: Stack(
-        children: [
-          ListView.builder(
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 50),
-            itemBuilder: (context, index) => buildMessage(data[index]),
-            itemCount: data.length,
-            reverse: true,
-          ),
-          buildInput()
-        ],
+      body: FutureBuilder(
+        future: getConversationContext(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: Text("You or your friends aren't real!"));
+          }
+          return buildConversation(snapshot.data!);
+        },
       ),
     );
   }
 
-  Widget buildMessage(Message message) {
+  Widget buildConversation(ConversationContext conversationContext) {
+    final conversation = db.collection('conversations').doc(conversationContext.conversationId).snapshots();
+
+    return Stack(
+      children: [
+        StreamBuilder(
+          stream: conversation,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: Text('Do you feel lonely?'));
+            }
+            final conversation = Conversation.fromFirestore(snapshot.data!.data()!);
+            conversation.messages.sort((a, b) => b.sentAt.compareTo(a.sentAt));
+
+            return Container(
+                color: chatBackground,
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 50),
+                  itemBuilder: (context, index) => buildMessage(conversationContext, conversation.messages[index]),
+                  itemCount: conversation.messages.length,
+                  reverse: true,
+                ));
+          },
+        ),
+        buildInput(conversationContext)
+      ],
+    );
+  }
+
+  Widget buildMessage(ConversationContext conversationContext, Message message) {
+    String? photoURL;
+    Color backgroundColor;
+    Color textColor;
+
+    if (message.authorId == conversationContext.senderId) {
+      photoURL = conversationContext.senderPhotoURL;
+      backgroundColor = greyColor;
+      textColor = blueColor;
+    } else {
+      photoURL = conversationContext.recipientPhotoURL;
+      backgroundColor = blueColor;
+      textColor = greyColor;
+    }
+
     final children = [
-      const CircleAvatar(
-        backgroundImage: NetworkImage('http://placekitten.com/50/50'),
+      CircleAvatar(
+        backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
         radius: 18,
       ),
       const SizedBox(
@@ -66,11 +155,11 @@ class ConversationWidgetState extends State<ConversationWidget> {
       ),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-        decoration: BoxDecoration(color: greyColor, borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(8)),
         margin: const EdgeInsets.all(10),
         child: Text(
           message.content,
-          style: const TextStyle(color: primaryColor),
+          style: TextStyle(color: textColor),
         ),
       ),
       const Spacer()
@@ -80,7 +169,7 @@ class ConversationWidgetState extends State<ConversationWidget> {
     );
   }
 
-  Widget buildInput() {
+  Widget buildInput(ConversationContext conversationContext) {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
@@ -91,13 +180,20 @@ class ConversationWidgetState extends State<ConversationWidget> {
               child: TextField(
                 autofocus: true,
                 controller: messageController,
+                decoration: const InputDecoration(
+                  hintText: 'Type a message',
+                  contentPadding: EdgeInsets.all(10.0),
+                ),
+                focusNode: messageFocus,
                 onSubmitted: (_) {
-                  sendMessage();
+                  sendMessage(conversationContext);
                 },
               ),
             ),
             IconButton(
-              onPressed: sendMessage,
+              onPressed: () {
+                sendMessage(conversationContext);
+              },
               icon: const Icon(Icons.send),
             )
           ],
@@ -106,8 +202,14 @@ class ConversationWidgetState extends State<ConversationWidget> {
     );
   }
 
-  void sendMessage() {
-    print(messageController.text);
+  Future<void> sendMessage(ConversationContext conversationContext) async {
+    final message =
+        Message(authorId: conversationContext.senderId, content: messageController.text, sentAt: Timestamp.now());
+    final update = <String, dynamic>{
+      Conversation.messagesKey: FieldValue.arrayUnion([message.toFirestore()])
+    };
+    await db.collection('conversations').doc(conversationContext.conversationId).update(update);
     messageController.clear();
+    messageFocus.requestFocus();
   }
 }

@@ -27,9 +27,10 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       initialRoute: FirebaseAuth.instance.currentUser == null ? '/sign-in' : '/contacts',
+      // TODO: add guards to prevent unauthorized access
       routes: {
-        '/sign-in': (context) => const SignInWidget(),
-        '/contacts': (context) => const ContactsWidget(),
+        '/sign-in': (context) => SignInWidget(),
+        '/contacts': (context) => ContactsWidget(),
         '/conversation': (context) {
           // TODO: remove the default
           final recipientId = (ModalRoute.of(context)?.settings.arguments ?? '1') as String;
