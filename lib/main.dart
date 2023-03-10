@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
         '/contacts': (context) => ContactsWidget(),
         '/conversation': (context) {
           // TODO: remove the default
-          final recipientId = (ModalRoute.of(context)?.settings.arguments ?? '1') as String;
+          final recipientId = (ModalRoute.of(context)?.settings.arguments) as String;
           return ConversationWidget(recipientId: recipientId);
         }
       },

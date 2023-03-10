@@ -28,20 +28,16 @@ flutter create --platforms=ios,android,web flutter_fire
 
 ## Contact List
 
-- Add user to firestore via Firebase Auth trigger (**TODO**)
+- Add user to firestore
 - Create global contacts list (https://firebase.google.com/docs/firestore/quickstart#dart)
 - Filter out self
-- Publish to web on firebase hosting (**TODO**)
+- Publish to web on firebase hosting
 
 ## Conversation
 
 - Create new route and view
 - Create message list
 - Create input to send message
-
-## Stretch Goals
-
-- Firestore backup
 
 ## Learning Topics
 
